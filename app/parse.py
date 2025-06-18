@@ -46,7 +46,12 @@ def page_generator(url: str) -> Generator[BeautifulSoup, None, None]:
     while True:
         page_url = urljoin(url, f"page/{page_counter}/")
         content = fetch_page_content(page_url)
+        if content is None:
+            break
         page = BeautifulSoup(content, "lxml")
+        col_md_8_elements = page.select(".col-md-8")
+        if len(col_md_8_elements) < 2:
+            break
         no_quotes_div = page.select(".col-md-8")[1]
         if "No quotes found!" in no_quotes_div.get_text(strip=True):
             break
@@ -61,15 +66,16 @@ def get_quotes() -> list[Quote]:
     return result
 
 
-def write_products_to_csv(quotes: [Quote]) -> None:
-    with open("result.csv", "w", newline="", encoding="utf-8") as f:
+def write_products_to_csv(quotes: list[Quote], output_csv_path: str) -> None:
+    with open(output_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(QUOTE_FIELDS)
         writer.writerows([astuple(quote) for quote in quotes])
 
 
 def main(output_csv_path: str) -> None:
-    write_products_to_csv(get_quotes())
+    quotes = get_quotes()
+    write_products_to_csv(quotes, output_csv_path)
 
 
 if __name__ == "__main__":
